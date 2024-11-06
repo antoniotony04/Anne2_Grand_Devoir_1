@@ -14,7 +14,7 @@
 
 ### Concepts clés
 - Classes, relations, interfaces
-- `Comparator` / `Comparable`
+- Comparator / Comparable
 - Énumérations
 - Exceptions
 - Fichiers (lecture & écriture)
