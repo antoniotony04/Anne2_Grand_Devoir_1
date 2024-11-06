@@ -1,13 +1,5 @@
+import javax.swing.*;
 
-public class Main {
-    public static void main(String[] args) {
-        boolean gameOn = true;
-        while(gameOn){
-            int input;
+public static void main(String[] args) {
 
-            switch(input){
-
-            }
-        }
-    }
 }
