@@ -7,4 +7,12 @@ public class Grain extends Gatherable {
     public boolean gatherable() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Grain{" +
+                "quantity=" + quantity +
+                ", quality=" + quality +
+                '}';
+    }
 }

@@ -1,9 +1,9 @@
 public abstract class Character {
-    protected String name;
-    protected int attack;
-    protected int defense;
-    protected int health;
-    protected boolean isAlive = true;
+    public String name;
+    public int attack;
+    public int defense;
+    public int health;
+    public boolean isAlive = true;
 
     public Character(String name, int attack, int defense, int health) {
         this.name = name;
@@ -14,16 +14,7 @@ public abstract class Character {
 
     public abstract void damage(int amount);
 
-    public void takeDamage(int amount) {
-        if (amount > 0) {
-            health -= amount;
-            if (health <= 0) {
-                health = 0;
-                die();
-            }
-        }
-    }
-
+    public abstract void takeDamage(int amount);
 
     public void die() {
         isAlive = false;

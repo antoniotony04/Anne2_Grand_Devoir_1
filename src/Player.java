@@ -1,7 +1,7 @@
 public class Player extends Character {
-    private int wood;
-    private int stone;
-    private int food;
+    public int wood;
+    public int stone;
+    public int food;
 
     public Player(String name, int attack, int defense, int health) {
         super(name, attack, defense, health);
@@ -36,9 +36,19 @@ public class Player extends Character {
 
     @Override
     public void damage(int amount) {
-        health -= Math.max(0, amount - defense);
+        health -= amount - defense;
         if (health <= 0) {
             die();
+        }
+    }
+    @Override
+    public void takeDamage(int amount) {
+        if (amount > 0) {
+            health -= amount;
+            if (health <= 0) {
+                health = 0;
+                die();
+            }
         }
     }
 }

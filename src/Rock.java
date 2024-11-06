@@ -7,4 +7,12 @@ public class Rock extends Gatherable {
     public boolean gatherable() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Rock{" +
+                "quantity=" + quantity +
+                ", quality=" + quality +
+                '}';
+    }
 }

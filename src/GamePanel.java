@@ -7,14 +7,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class GamePanel extends JFrame {
-    private JPanel gamePanel;
-    private JPanel statsPanel;
-    private Player player;
-    private Object[][] map;
-    private int playerX, playerY;
+    public JPanel gamePanel;
+    public JPanel statsPanel;
+    public Player player;
+    public Object[][] map;
+    public int playerX, playerY;
+    public int kc = 0;
 
     public GamePanel() {
-        setTitle("Survival Game");
+        setTitle("Jocul lui Tony si Daria");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         setSize(800, 600);
@@ -31,7 +32,7 @@ public class GamePanel extends JFrame {
 
         gamePanel = new JPanel() {
             @Override
-            protected void paintComponent(Graphics g) {
+            public void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 drawMap(g);
             }
@@ -46,12 +47,16 @@ public class GamePanel extends JFrame {
         add(statsPanel, BorderLayout.EAST);
 
         addKeyListener(new KeyListener() {
-            @Override
             public void keyTyped(KeyEvent e) {}
 
             @Override
             public void keyPressed(KeyEvent e) {
-                handleMovement(e.getKeyCode());
+                if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_S ||
+                        e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_D) {
+                    handleMovement(e.getKeyCode());
+                } else {
+                    handleBuildingCreation(e.getKeyCode());
+                }
                 updateStatsPanel();
                 repaint();
             }
@@ -72,29 +77,88 @@ public class GamePanel extends JFrame {
             }
         }, 0, 20000);
     }
+    public void handleBuildingCreation(int keyCode) {
+        Building building = null;
 
-    private void spawnRandomObjects(int size) {
-        Random random = new Random();
+        if (keyCode == KeyEvent.VK_1) {
+            building = new Building("Fantana Vietii", 10, 15);
+        } else if (keyCode == KeyEvent.VK_2) {
+            building = new Building("Monumentul Sabiei", 10, 15);
+        }
 
-        for (int i = 0; i < size; i++) {
-            int x = random.nextInt(size);
-            int y = random.nextInt(size);
+        if (building != null) {
+            if (player.getWood() >= building.getWoodCost() && player.getStone() >= building.getStoneCost()) {
+                player.collectWood(-building.getWoodCost());
+                player.collectStone(-building.getStoneCost());
 
-            if (map[y][x] == null) {
-                if (random.nextDouble() < 0.2) {
-                    map[y][x] = new Enemy("Caine salbatic", 8, 3, 50);
-                } else if (random.nextDouble() < 0.5) {
-                    map[y][x] = new Tree(5, Gatherable.Quality.COMMON);
-                } else if (random.nextDouble() < 0.3) {
-                    map[y][x] = new Rock(5, Gatherable.Quality.RARE);
-                } else {
-                    map[y][x] = new Grain(3, Gatherable.Quality.EPIC);
+                if (building.getName().equals("Fantana Vietii")) {
+                    player.health = 100;
+                    System.out.println("Ai construit Fantana Vietii! Viata ta a fost restaurata complet.");
+                } else if (building.getName().equals("Monumentul Sabiei")) {
+                    player.attack += player.attack * 0.1;
+                    System.out.println("Ai construit Monumentul Sabiei! Atacul tau a crescut cu 10%.");
                 }
+            } else {
+                System.out.println("Nu ai suficiente resurse pentru a construi " + building.getName());
             }
         }
     }
+    public void spawnRandomObjects(int size) {
+        Random random = new Random();
 
-    private void handleMovement(int keyCode) {
+        for (int i = 0; i < 3; i++) {
+            placeRandomObject(size, new Enemy("Caine salbatic", 8, 3, 50));
+        }
+
+        for (int i = 0; i < 3; i++) {
+            Gatherable.Quality quality = randomQuality(random);
+            placeRandomObject(size, new Tree(getQuantityByQuality(5, quality), quality));
+        }
+
+        for (int i = 0; i < 3; i++) {
+            Gatherable.Quality quality = randomQuality(random);
+            placeRandomObject(size, new Rock(getQuantityByQuality(5, quality), quality));
+        }
+
+        for (int i = 0; i < 3; i++) {
+            Gatherable.Quality quality = randomQuality(random);
+            placeRandomObject(size, new Grain(getQuantityByQuality(3, quality), quality));
+        }
+    }
+
+    public void placeRandomObject(int size, Object obj) {
+        Random random = new Random();
+        int x, y;
+        do {
+            x = random.nextInt(size);
+            y = random.nextInt(size);
+        } while (map[y][x] != null);
+        map[y][x] = obj;
+    }
+    public Gatherable.Quality randomQuality(Random random) {
+        double chance = random.nextDouble();
+        if (chance < 0.5) {
+            return Gatherable.Quality.COMMON;
+        } else if (chance < 0.8) {
+            return Gatherable.Quality.RARE;
+        } else {
+            return Gatherable.Quality.EPIC;
+        }
+    }
+    public int getQuantityByQuality(int base, Gatherable.Quality quality) {
+        switch (quality) {
+            case COMMON:
+                return base * 2;
+            case RARE:
+                return base * 3;
+            case EPIC:
+                return base * 5;
+            default:
+                return base;
+        }
+    }
+
+    public void handleMovement(int keyCode) {
         int newX = playerX;
         int newY = playerY;
 
@@ -113,23 +177,26 @@ public class GamePanel extends JFrame {
 
             if (encountered instanceof Gatherable) {
                 Gatherable gatherable = (Gatherable) encountered;
+                String quality = gatherable.quality.name();
+
                 if (gatherable instanceof Tree) {
                     player.collectWood(gatherable.quantity);
-                    System.out.println("Collected wood: " + gatherable.quantity);
+                    System.out.println("Ai colectat lemn " + quality + ": " + gatherable.quantity);
                 } else if (gatherable instanceof Rock) {
                     player.collectStone(gatherable.quantity);
-                    System.out.println("Collected stone: " + gatherable.quantity);
+                    System.out.println("Ai colectat piatra " + quality + ": " + gatherable.quantity);
                 } else if (gatherable instanceof Grain) {
                     player.collectFood(gatherable.quantity);
-                    System.out.println("Collected food: " + gatherable.quantity);
+                    System.out.println("Ai colectat mancare " + quality + ": " + gatherable.quantity);
                 }
-                map[newY][newX] = 0;
+                map[newY][newX] = null;
             } else if (encountered instanceof Enemy) {
                 Enemy enemy = (Enemy) encountered;
                 battle(enemy);
                 if (!enemy.isAlive) {
                     map[newY][newX] = null;
-                    System.out.println("Defeated enemy!");
+                    System.out.println("Ai invins un inamic!");
+                    kc++;
                 }
             }
 
@@ -140,43 +207,43 @@ public class GamePanel extends JFrame {
         }
     }
 
-    private void endGame() {
-        JOptionPane.showMessageDialog(this, "Jocul s-a terminat. " + player.name + " a murit!", "Joc terminat!", JOptionPane.ERROR_MESSAGE);
+    public void endGame() {
+        JOptionPane.showMessageDialog(this, "Jocul s-a terminat. " + player.name + " a murit cu scorul "+ kc+"!", "Joc terminat!", JOptionPane.ERROR_MESSAGE);
         this.removeKeyListener(this.getKeyListeners()[0]);
         System.exit(0);
     }
 
-    private void battle(Enemy enemy) {
-        System.out.println("Battle started with " + enemy.name);
+    public void battle(Enemy enemy) {
+        System.out.println("Batalia a inceput cu " + enemy.name);
 
         while (player.isAlive && enemy.isAlive) {
-            int playerDamage = Math.max(0, player.attack - enemy.defense);
+            int playerDamage = player.attack - enemy.defense;
             enemy.takeDamage(playerDamage);
-            System.out.println("Player deals " + playerDamage + " damage to the enemy.");
+            System.out.println("Jucatorul da " + playerDamage + " daune inamicului.");
 
             if (!enemy.isAlive) {
-                System.out.println("Enemy defeated!");
+                System.out.println("Inamicul a fost invins!");
                 return;
             }
 
-            int enemyDamage = Math.max(0, enemy.attack - player.defense);
+            int enemyDamage = enemy.attack - player.defense;
             player.takeDamage(enemyDamage);
-            System.out.println("Enemy deals " + enemyDamage + " damage to the player.");
+            System.out.println("Inamicul da " + enemyDamage + " daune jucatorului.");
 
             if (!player.isAlive) {
-                System.out.println("The game ended, " + player.name + " died!");
+                System.out.println("Jocul s-a terminat, " + player.name + " a murit!");
                 endGame();
                 return;
             }
         }
     }
 
-    private void drawMap(Graphics g) {
+    public void drawMap(Graphics g) {
         int cellSize = 50;
         for (int y = 0; y < map.length; y++) {
             for (int x = 0; x < map[y].length; x++) {
                 if (map[y][x] instanceof Player) {
-                    g.setColor(Color.BLUE);
+                    g.setColor(Color.PINK); //ideea dariei
                 } else if (map[y][x] instanceof Tree) {
                     g.setColor(Color.GREEN);
                 } else if (map[y][x] instanceof Rock) {
@@ -195,16 +262,20 @@ public class GamePanel extends JFrame {
         }
     }
 
-    private void updateStatsPanel() {
+    public void updateStatsPanel() {
         statsPanel.removeAll();
 
-        JLabel statsLabel = new JLabel("<html>"
-                + "HP: " + player.health + "<br>"
-                + "Attack: " + player.attack + "<br>"
-                + "Defense: " + player.defense + "<br>"
-                + "Wood: " + player.getWood() + "<br>"
-                + "Stone: " + player.getStone() + "<br>"
-                + "Food: " + player.getFood() + "</html>");
+        JLabel statsLabel = new JLabel("<html><font size=8>"
+                + "Viata: " + player.health + "<br>"
+                + "Atac: " + player.attack + "<br>"
+                + "Aparare: " + player.defense + "<br>"
+                + "Lemn: " + player.getWood() + "<br>"
+                + "Piatra: " + player.getStone() + "<br>"
+                + "Mancare: " + player.getFood() + "<br></font>"
+                + "Pentru constructii apasa tasta:" + "<br>"
+                + "1. Fountain Of Life" + "<br>"
+                + "2. Sword Monument" + "</html>");
+
 
         statsPanel.add(statsLabel);
         statsPanel.revalidate();

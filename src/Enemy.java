@@ -11,4 +11,15 @@ public class Enemy extends Character {
     public String dropLoot() {
         return "Random Loot";
     }
+
+    @Override
+    public void takeDamage(int amount) {
+        if (amount > 0) {
+            health -= amount;
+            if (health <= 0) {
+                health = 0;
+                die();
+            }
+        }
+    }
 }
