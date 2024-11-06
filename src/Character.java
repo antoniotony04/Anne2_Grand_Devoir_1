@@ -1,4 +1,3 @@
-// Character.java
 public abstract class Character {
     protected String name;
     protected int attack;
@@ -19,7 +18,7 @@ public abstract class Character {
         if (amount > 0) {
             health -= amount;
             if (health <= 0) {
-                health = 0; // Prevent health from going negative
+                health = 0;
                 die();
             }
         }

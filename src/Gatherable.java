@@ -1,4 +1,3 @@
-// Gatherable.java
 public abstract class Gatherable {
     protected int quantity;
     protected Quality quality;

@@ -10,8 +10,8 @@ public class GamePanel extends JFrame {
     private JPanel gamePanel;
     private JPanel statsPanel;
     private Player player;
-    private Object[][] map; // Harta cu obiecte si inamici
-    private int playerX, playerY; // Poziția jucatorului pe hartă
+    private Object[][] map;
+    private int playerX, playerY;
 
     public GamePanel() {
         setTitle("Survival Game");
@@ -19,20 +19,16 @@ public class GamePanel extends JFrame {
         setLayout(new BorderLayout());
         setSize(800, 600);
 
-        // Initializeaza harta
-        int size = 10; // Dimensiunea matricei
+        int size = 10;
         map = new Object[size][size];
         playerX = size / 2;
         playerY = size / 2;
 
-        // Initializează jucătorul
         player = new Player("Jucator", 10, 5, 100);
         map[playerY][playerX] = player;
 
-        // Populează harta inițial
         spawnRandomObjects(size);
 
-        // Game panel
         gamePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -43,14 +39,12 @@ public class GamePanel extends JFrame {
         gamePanel.setPreferredSize(new Dimension(600, 600));
         add(gamePanel, BorderLayout.CENTER);
 
-        // Stats panel
         statsPanel = new JPanel();
         statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
         statsPanel.setPreferredSize(new Dimension(200, 600));
         updateStatsPanel();
         add(statsPanel, BorderLayout.EAST);
 
-        // Adaugă key listener pentru mișcare
         addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {}
@@ -69,7 +63,6 @@ public class GamePanel extends JFrame {
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
 
-        // Spawnează obiecte periodic
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -77,7 +70,7 @@ public class GamePanel extends JFrame {
                 spawnRandomObjects(size);
                 repaint();
             }
-        }, 0, 20000); // La fiecare 20 de secunde
+        }, 0, 20000);
     }
 
     private void spawnRandomObjects(int size) {
@@ -105,22 +98,19 @@ public class GamePanel extends JFrame {
         int newX = playerX;
         int newY = playerY;
 
-        // Verificăm input-ul
-        if (keyCode == KeyEvent.VK_W) { // Sus
+        if (keyCode == KeyEvent.VK_W) {
             newY--;
-        } else if (keyCode == KeyEvent.VK_S) { // Jos
+        } else if (keyCode == KeyEvent.VK_S) {
             newY++;
-        } else if (keyCode == KeyEvent.VK_A) { // Stânga
+        } else if (keyCode == KeyEvent.VK_A) {
             newX--;
-        } else if (keyCode == KeyEvent.VK_D) { // Dreapta
+        } else if (keyCode == KeyEvent.VK_D) {
             newX++;
         }
 
-        // Verificăm limitele matricei
         if (newX >= 0 && newX < map.length && newY >= 0 && newY < map[0].length) {
             Object encountered = map[newY][newX];
 
-            // Gestionăm interacțiunile
             if (encountered instanceof Gatherable) {
                 Gatherable gatherable = (Gatherable) encountered;
                 if (gatherable instanceof Tree) {
@@ -133,83 +123,70 @@ public class GamePanel extends JFrame {
                     player.collectFood(gatherable.quantity);
                     System.out.println("Collected food: " + gatherable.quantity);
                 }
-                map[newY][newX] = 0; // Golim locul
+                map[newY][newX] = 0;
             } else if (encountered instanceof Enemy) {
                 Enemy enemy = (Enemy) encountered;
                 battle(enemy);
                 if (!enemy.isAlive) {
-                    map[newY][newX] = null; // Inamicul a murit
+                    map[newY][newX] = null;
                     System.out.println("Defeated enemy!");
                 }
             }
 
-            // Mutăm jucătorul
-            map[playerY][playerX] = null; // Lăsăm celula goală
+            map[playerY][playerX] = null;
             playerX = newX;
             playerY = newY;
             map[playerY][playerX] = player;
         }
     }
+
     private void endGame() {
-        // Show a message dialog
         JOptionPane.showMessageDialog(this, "Jocul s-a terminat. " + player.name + " a murit!", "Joc terminat!", JOptionPane.ERROR_MESSAGE);
-
-        // Disable further input
-        this.removeKeyListener(this.getKeyListeners()[0]); // Removes the key listener
-
-        // Optionally, you can stop object spawning
-        // (Assuming the Timer is declared as a class-level variable)
-        // timer.cancel();
-
-        // Exit the game after showing the message (optional)
-        System.exit(0); // Terminate the program
+        this.removeKeyListener(this.getKeyListeners()[0]);
+        System.exit(0);
     }
 
     private void battle(Enemy enemy) {
         System.out.println("Battle started with " + enemy.name);
 
         while (player.isAlive && enemy.isAlive) {
-            // Player attacks first
             int playerDamage = Math.max(0, player.attack - enemy.defense);
             enemy.takeDamage(playerDamage);
             System.out.println("Player deals " + playerDamage + " damage to the enemy.");
 
             if (!enemy.isAlive) {
                 System.out.println("Enemy defeated!");
-                return; // Exit battle if the enemy dies
+                return;
             }
 
-            // Enemy attacks back
             int enemyDamage = Math.max(0, enemy.attack - player.defense);
             player.takeDamage(enemyDamage);
             System.out.println("Enemy deals " + enemyDamage + " damage to the player.");
 
             if (!player.isAlive) {
                 System.out.println("The game ended, " + player.name + " died!");
-                endGame(); // Call method to end the game
+                endGame();
                 return;
             }
         }
     }
 
-
-
     private void drawMap(Graphics g) {
-        int cellSize = 50; // Dimensiunea unei celule
+        int cellSize = 50;
         for (int y = 0; y < map.length; y++) {
             for (int x = 0; x < map[y].length; x++) {
                 if (map[y][x] instanceof Player) {
-                    g.setColor(Color.BLUE); // Jucătorul
+                    g.setColor(Color.BLUE);
                 } else if (map[y][x] instanceof Tree) {
-                    g.setColor(Color.GREEN); // Copac
+                    g.setColor(Color.GREEN);
                 } else if (map[y][x] instanceof Rock) {
-                    g.setColor(Color.GRAY); // Rocă
+                    g.setColor(Color.GRAY);
                 } else if (map[y][x] instanceof Grain) {
-                    g.setColor(Color.YELLOW); // Cereale
+                    g.setColor(Color.YELLOW);
                 } else if (map[y][x] instanceof Enemy) {
-                    g.setColor(Color.RED); // Inamic
+                    g.setColor(Color.RED);
                 } else {
-                    g.setColor(Color.LIGHT_GRAY); // Celule goale
+                    g.setColor(Color.LIGHT_GRAY);
                 }
                 g.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
                 g.setColor(Color.BLACK);
@@ -222,12 +199,12 @@ public class GamePanel extends JFrame {
         statsPanel.removeAll();
 
         JLabel statsLabel = new JLabel("<html>"
-                + "<font size=8>HP: " + player.health + "<br>"
+                + "HP: " + player.health + "<br>"
                 + "Attack: " + player.attack + "<br>"
                 + "Defense: " + player.defense + "<br>"
                 + "Wood: " + player.getWood() + "<br>"
                 + "Stone: " + player.getStone() + "<br>"
-                + "Food: " + player.getFood() + "</font></html>");
+                + "Food: " + player.getFood() + "</html>");
 
         statsPanel.add(statsLabel);
         statsPanel.revalidate();

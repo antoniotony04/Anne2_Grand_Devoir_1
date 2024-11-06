@@ -1,4 +1,3 @@
-// Enemy.java
 public class Enemy extends Character {
     public Enemy(String name, int attack, int defense, int health) {
         super(name, attack, defense, health);
