@@ -16,11 +16,15 @@ public abstract class Character {
     public abstract void damage(int amount);
 
     public void takeDamage(int amount) {
-        health -= Math.max(0, amount - defense);
-        if (health <= 0) {
-            die();
+        if (amount > 0) {
+            health -= amount;
+            if (health <= 0) {
+                health = 0; // Prevent health from going negative
+                die();
+            }
         }
     }
+
 
     public void die() {
         isAlive = false;

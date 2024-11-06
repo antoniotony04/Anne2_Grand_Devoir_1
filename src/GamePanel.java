@@ -2,13 +2,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class GamePanel extends JFrame {
     private JPanel gamePanel;
-    private JPanel upgradePanel;
+    private JPanel statsPanel;
     private Player player;
-    private int[][] map;
-    private int playerX, playerY; // Poziția jucătorului pe hartă
+    private Object[][] map; // Harta cu obiecte si inamici
+    private int playerX, playerY; // Poziția jucatorului pe hartă
 
     public GamePanel() {
         setTitle("Survival Game");
@@ -16,14 +19,18 @@ public class GamePanel extends JFrame {
         setLayout(new BorderLayout());
         setSize(800, 600);
 
-        // Initializează harta
+        // Initializeaza harta
         int size = 10; // Dimensiunea matricei
-        map = new int[size][size];
+        map = new Object[size][size];
         playerX = size / 2;
         playerY = size / 2;
 
-        // Adaugă player-ul pe hartă
-        map[playerY][playerX] = 1; // 1 reprezintă jucătorul
+        // Initializează jucătorul
+        player = new Player("Jucator", 10, 5, 100);
+        map[playerY][playerX] = player;
+
+        // Populează harta inițial
+        spawnRandomObjects(size);
 
         // Game panel
         gamePanel = new JPanel() {
@@ -36,21 +43,12 @@ public class GamePanel extends JFrame {
         gamePanel.setPreferredSize(new Dimension(600, 600));
         add(gamePanel, BorderLayout.CENTER);
 
-        // Upgrade panel
-        upgradePanel = new JPanel();
-        upgradePanel.setLayout(new BoxLayout(upgradePanel, BoxLayout.Y_AXIS));
-        upgradePanel.setPreferredSize(new Dimension(200, 600));
-        JLabel upgradeLabel = new JLabel("Upgrade-uri");
-        upgradePanel.add(upgradeLabel);
-
-        JButton upgradeButton = new JButton("Upgrade Attack");
-        upgradeButton.addActionListener(e -> player.attack += 1);
-        upgradePanel.add(upgradeButton);
-
-        add(upgradePanel, BorderLayout.EAST);
-
-        // Initializează player-ul
-        player = new Player("Jucator", 10, 5, 100);
+        // Stats panel
+        statsPanel = new JPanel();
+        statsPanel.setLayout(new BoxLayout(statsPanel, BoxLayout.Y_AXIS));
+        statsPanel.setPreferredSize(new Dimension(200, 600));
+        updateStatsPanel();
+        add(statsPanel, BorderLayout.EAST);
 
         // Adaugă key listener pentru mișcare
         addKeyListener(new KeyListener() {
@@ -60,6 +58,7 @@ public class GamePanel extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 handleMovement(e.getKeyCode());
+                updateStatsPanel();
                 repaint();
             }
 
@@ -69,6 +68,37 @@ public class GamePanel extends JFrame {
 
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
+
+        // Spawnează obiecte periodic
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                spawnRandomObjects(size);
+                repaint();
+            }
+        }, 0, 20000); // La fiecare 20 de secunde
+    }
+
+    private void spawnRandomObjects(int size) {
+        Random random = new Random();
+
+        for (int i = 0; i < size; i++) {
+            int x = random.nextInt(size);
+            int y = random.nextInt(size);
+
+            if (map[y][x] == null) {
+                if (random.nextDouble() < 0.2) {
+                    map[y][x] = new Enemy("Caine salbatic", 8, 3, 50);
+                } else if (random.nextDouble() < 0.5) {
+                    map[y][x] = new Tree(5, Gatherable.Quality.COMMON);
+                } else if (random.nextDouble() < 0.3) {
+                    map[y][x] = new Rock(5, Gatherable.Quality.RARE);
+                } else {
+                    map[y][x] = new Grain(3, Gatherable.Quality.EPIC);
+                }
+            }
+        }
     }
 
     private void handleMovement(int keyCode) {
@@ -88,20 +118,96 @@ public class GamePanel extends JFrame {
 
         // Verificăm limitele matricei
         if (newX >= 0 && newX < map.length && newY >= 0 && newY < map[0].length) {
-            // Actualizăm harta
-            map[playerY][playerX] = 0; // Lăsăm celula goală
+            Object encountered = map[newY][newX];
+
+            // Gestionăm interacțiunile
+            if (encountered instanceof Gatherable) {
+                Gatherable gatherable = (Gatherable) encountered;
+                if (gatherable instanceof Tree) {
+                    player.collectWood(gatherable.quantity);
+                    System.out.println("Collected wood: " + gatherable.quantity);
+                } else if (gatherable instanceof Rock) {
+                    player.collectStone(gatherable.quantity);
+                    System.out.println("Collected stone: " + gatherable.quantity);
+                } else if (gatherable instanceof Grain) {
+                    player.collectFood(gatherable.quantity);
+                    System.out.println("Collected food: " + gatherable.quantity);
+                }
+                map[newY][newX] = 0; // Golim locul
+            } else if (encountered instanceof Enemy) {
+                Enemy enemy = (Enemy) encountered;
+                battle(enemy);
+                if (!enemy.isAlive) {
+                    map[newY][newX] = null; // Inamicul a murit
+                    System.out.println("Defeated enemy!");
+                }
+            }
+
+            // Mutăm jucătorul
+            map[playerY][playerX] = null; // Lăsăm celula goală
             playerX = newX;
             playerY = newY;
-            map[playerY][playerX] = 1; // Mutăm jucătorul
+            map[playerY][playerX] = player;
         }
     }
+    private void endGame() {
+        // Show a message dialog
+        JOptionPane.showMessageDialog(this, "Jocul s-a terminat. " + player.name + " a murit!", "Joc terminat!", JOptionPane.ERROR_MESSAGE);
+
+        // Disable further input
+        this.removeKeyListener(this.getKeyListeners()[0]); // Removes the key listener
+
+        // Optionally, you can stop object spawning
+        // (Assuming the Timer is declared as a class-level variable)
+        // timer.cancel();
+
+        // Exit the game after showing the message (optional)
+        System.exit(0); // Terminate the program
+    }
+
+    private void battle(Enemy enemy) {
+        System.out.println("Battle started with " + enemy.name);
+
+        while (player.isAlive && enemy.isAlive) {
+            // Player attacks first
+            int playerDamage = Math.max(0, player.attack - enemy.defense);
+            enemy.takeDamage(playerDamage);
+            System.out.println("Player deals " + playerDamage + " damage to the enemy.");
+
+            if (!enemy.isAlive) {
+                System.out.println("Enemy defeated!");
+                return; // Exit battle if the enemy dies
+            }
+
+            // Enemy attacks back
+            int enemyDamage = Math.max(0, enemy.attack - player.defense);
+            player.takeDamage(enemyDamage);
+            System.out.println("Enemy deals " + enemyDamage + " damage to the player.");
+
+            if (!player.isAlive) {
+                System.out.println("The game ended, " + player.name + " died!");
+                endGame(); // Call method to end the game
+                return;
+            }
+        }
+    }
+
+
 
     private void drawMap(Graphics g) {
         int cellSize = 50; // Dimensiunea unei celule
         for (int y = 0; y < map.length; y++) {
             for (int x = 0; x < map[y].length; x++) {
-                if (map[y][x] == 1) {
+                if (map[y][x] instanceof Player) {
                     g.setColor(Color.BLUE); // Jucătorul
+                } else if (map[y][x] instanceof Tree) {
+                    g.setColor(Color.GREEN); // Copac
+                } else if (map[y][x] instanceof Rock) {
+                    g.setColor(Color.GRAY); // Rocă
+                } else if (map[y][x] instanceof Grain) {
+                    g.setColor(Color.YELLOW); // Cereale
+                } else if (map[y][x] instanceof Enemy) {
+                    g.setColor(Color.RED); // Inamic
                 } else {
                     g.setColor(Color.LIGHT_GRAY); // Celule goale
                 }
@@ -110,6 +216,22 @@ public class GamePanel extends JFrame {
                 g.drawRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
+    }
+
+    private void updateStatsPanel() {
+        statsPanel.removeAll();
+
+        JLabel statsLabel = new JLabel("<html>"
+                + "<font size=8>HP: " + player.health + "<br>"
+                + "Attack: " + player.attack + "<br>"
+                + "Defense: " + player.defense + "<br>"
+                + "Wood: " + player.getWood() + "<br>"
+                + "Stone: " + player.getStone() + "<br>"
+                + "Food: " + player.getFood() + "</font></html>");
+
+        statsPanel.add(statsLabel);
+        statsPanel.revalidate();
+        statsPanel.repaint();
     }
 
     public static void main(String[] args) {
