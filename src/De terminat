@@ -1,11 +1,4 @@
-1. Inamicul, odată învins, poate lăsa un obiect (sabie, armură, cască etc.), așa că trebuie să implementați metode
- și atribute suplimentare pentru a gestiona acest lucru.O altă clasă pentru obiecte:
+1.Lucru cu fisiere. (Citire player, inamic, arme etc.)
+(Log.txt pentru a salva in log ce se afiseaza in sout)
 
-2. Atribute: nume și atribute care pot îmbunătăți jucătorul, adică pot crește sănătatea, atacul sau apărarea jucătorului.
-Obiectele pot fi fabricate sau lăsate de inamici.Implementați un comparator capabil să sorteze obiectele (ex. cele din inventarul jucătorului)
-în funcție de criteriile alese de voi.Trebuie să lucrați cu fișiere externe (citire și scriere) pentru un scenariu ales de voi, de exemplu:
-deschiderea și citirea fișierelor care încarcă o listă de obiecte predefinite și statisticile acestora; citirea fișierelor care încarcă o listă
- de monștri disponibili; salvarea stării jocului
-într-un fișier etc. Alegeți sau imaginați o altă utilizare utilă a fișierelor și implementați-o (trebuie să aibă o funcție relevantă).
-
-3. clasa pt inventar. Bonus: încercați să implementați și alte comparatoare sau interfețe suplimentare.
+2.Bonus points(interfete)

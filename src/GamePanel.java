@@ -2,9 +2,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 
 public class GamePanel extends JFrame {
     public JPanel gamePanel;
@@ -13,6 +16,7 @@ public class GamePanel extends JFrame {
     public Object[][] map;
     public int playerX, playerY;
     public int kc = 0;
+    public int enemyType = 0;
 
     public GamePanel() {
         setTitle("Jocul lui Tony si Daria");
@@ -52,10 +56,15 @@ public class GamePanel extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_S ||
-                        e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_D) {
+                        e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_D ||
+                        e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN ||
+                        e.getKeyCode() == KeyEvent.VK_LEFT || e.getKeyCode() == KeyEvent.VK_RIGHT) {
                     handleMovement(e.getKeyCode());
-                } else {
+                } else if(e.getKeyCode() == KeyEvent.VK_1 || e.getKeyCode() == KeyEvent.VK_2) {
                     handleBuildingCreation(e.getKeyCode());
+                }
+                else if(e.getKeyCode() == KeyEvent.VK_F) {
+                    useFood(e.getKeyCode());
                 }
                 updateStatsPanel();
                 repaint();
@@ -75,13 +84,33 @@ public class GamePanel extends JFrame {
                 spawnRandomObjects(size);
                 repaint();
             }
-        }, 0, 20000);
+        }, 0, 10000);
+    }
+
+    public void useFood(int keyCode){
+        if(keyCode == KeyEvent.VK_F){
+
+            if(player.health < 100){
+                player.health = player.health+1;
+                player.setFood(player.getFood()-10);
+                System.out.println("Punctele de viata au crescut cu o unitate.");
+            }
+            else{
+                System.out.println("Viata este deja maxima.");
+            }
+
+        }
     }
     public void handleBuildingCreation(int keyCode) {
         Building building = null;
 
         if (keyCode == KeyEvent.VK_1) {
-            building = new Building("Fantana Vietii", 10, 15);
+            if(player.health==100){
+                System.out.println("Viata este deja maxima");
+            }
+            else {
+                building = new Building("Fantana Vietii", 10, 15);
+            }
         } else if (keyCode == KeyEvent.VK_2) {
             building = new Building("Monumentul Sabiei", 10, 15);
         }
@@ -96,18 +125,33 @@ public class GamePanel extends JFrame {
                     System.out.println("Ai construit Fantana Vietii! Viata ta a fost restaurata complet.");
                 } else if (building.getName().equals("Monumentul Sabiei")) {
                     player.attack += player.attack * 0.1;
-                    System.out.println("Ai construit Monumentul Sabiei! Atacul tau a crescut cu 10%.");
+                    System.out.println("Ai construit Monumentul Sabiei! Atacul a crescut cu 10%.");
                 }
             } else {
                 System.out.println("Nu ai suficiente resurse pentru a construi " + building.getName());
             }
         }
     }
+
+    /*public void changeEnemyType(Enemy main){
+        ArrayList<Enemy> inamici = new ArrayList<Enemy>();
+        //enemyType = 0 => Caine salbatic
+        inamici.add(new Enemy("Caine salbatic", 15, 3, 50));
+        inamici.add(new Enemy("Lup Salbatic", 20, 5, 70));
+        inamici.add(new Enemy("Lup Albastru", 30, 5, 80));
+        main = inamici.get(enemyType);
+        if(enemyType<3){
+            enemyType++;
+        }
+
+    }*/
+    //Idee de viitor de facut sa se spawneze inamici mai grei deoarece itemele ofera bonusuri cu ajutorul carora inamicii devin prea slabi pentru player
+
     public void spawnRandomObjects(int size) {
         Random random = new Random();
-
+        Enemy main = new Enemy("Caine salbatic", 15, 3, 50);
         for (int i = 0; i < 3; i++) {
-            placeRandomObject(size, new Enemy("Caine salbatic", 8, 3, 50));
+            placeRandomObject(size, main);
         }
 
         for (int i = 0; i < 3; i++) {
@@ -139,7 +183,7 @@ public class GamePanel extends JFrame {
         double chance = random.nextDouble();
         if (chance < 0.5) {
             return Gatherable.Quality.COMMON;
-        } else if (chance < 0.8) {
+        } else if (chance < 0.9) {
             return Gatherable.Quality.RARE;
         } else {
             return Gatherable.Quality.EPIC;
@@ -162,13 +206,13 @@ public class GamePanel extends JFrame {
         int newX = playerX;
         int newY = playerY;
 
-        if (keyCode == KeyEvent.VK_W) {
+        if (keyCode == KeyEvent.VK_W || keyCode == KeyEvent.VK_UP) {
             newY--;
-        } else if (keyCode == KeyEvent.VK_S) {
+        } else if (keyCode == KeyEvent.VK_S || keyCode == KeyEvent.VK_DOWN) {
             newY++;
-        } else if (keyCode == KeyEvent.VK_A) {
+        } else if (keyCode == KeyEvent.VK_A || keyCode == KeyEvent.VK_LEFT) {
             newX--;
-        } else if (keyCode == KeyEvent.VK_D) {
+        } else if (keyCode == KeyEvent.VK_D || keyCode == KeyEvent.VK_RIGHT) {
             newX++;
         }
 
@@ -217,16 +261,70 @@ public class GamePanel extends JFrame {
         System.out.println("Batalia a inceput cu " + enemy.name);
 
         while (player.isAlive && enemy.isAlive) {
-            int playerDamage = player.attack - enemy.defense;
+            int playerDamage = Math.max(0, player.attack - enemy.defense);
             enemy.takeDamage(playerDamage);
             System.out.println("Jucatorul da " + playerDamage + " daune inamicului.");
 
             if (!enemy.isAlive) {
                 System.out.println("Inamicul a fost invins!");
-                return;
+                Item dropat = enemy.dropItem();
+                if (dropat != null) {
+                    System.out.println("Itemul dropat: " + dropat.toString());
+
+                    valoareAtacComparator a = new valoareAtacComparator();
+                    aparareComparator b = new aparareComparator();
+
+                    if (dropat.type == 1) {
+                        if (player.getArma() != dropat) {
+                            if (a.compare(player.getArma(), dropat) > 0) {
+//                                player.addItemToInventory(player.getArma());
+                                player.setArma(dropat);
+                                System.out.println("Arma echipata: " + dropat.name);
+//                                System.out.println("Arma veche in inventar.");
+                                updateStatsPanel();
+                            } else {
+                                System.out.println("Arma existenta este mai buna decat itemul dropat.");
+                                player.addItemToInventory(dropat);
+                                updateStatsPanel();
+
+                            }
+                        }
+                    } else if (dropat.type == 2) {
+                        if (player.getCasca() != dropat) {
+                            if (b.compare(player.getCasca(), dropat) > 0) {
+//                                player.addItemToInventory(player.getCasca());
+                                player.setCasca(dropat);
+                                System.out.println("Casca echipata: " + dropat.name);
+//                                System.out.println("Casca veche in inventar");
+                                updateStatsPanel();
+                            } else {
+                                System.out.println("Casca existenta este mai buna decat itemul dropat.");
+                                player.addItemToInventory(dropat);
+                                updateStatsPanel();
+                            }
+                        }
+                    } else if (dropat.type == 3) {
+                        if (player.getArmura() != dropat) {
+                            if (b.compare(player.getArmura(), dropat) > 0) {
+//                                player.addItemToInventory(player.getArmura());
+                                player.setArmura(dropat);
+                                System.out.println("Armura echipata: " + dropat.name);
+//                                System.out.println("Armura veche in inventar.");
+                                updateStatsPanel();
+                            } else {
+                                System.out.println("Armura existenta este mai buna decat itemul dropat.");
+                                player.addItemToInventory(dropat);
+                                updateStatsPanel();
+                            }
+                        }
+                    }
+                    updateStatsPanel();
+                } else {
+                    System.out.println("Inamicul nu a dropat nimic.");
+                }
             }
 
-            int enemyDamage = enemy.attack - player.defense;
+            int enemyDamage = Math.max(0, enemy.attack - player.defense);
             player.takeDamage(enemyDamage);
             System.out.println("Inamicul da " + enemyDamage + " daune jucatorului.");
 
@@ -237,6 +335,8 @@ public class GamePanel extends JFrame {
             }
         }
     }
+
+
 
     public void drawMap(Graphics g) {
         int cellSize = 50;
@@ -262,30 +362,41 @@ public class GamePanel extends JFrame {
         }
     }
 
+
+
     public void updateStatsPanel() {
         statsPanel.removeAll();
+        //HTML in JLabel https://stackoverflow.com/questions/6635730/how-do-i-put-html-in-a-jlabel-in-java
+        String inventory = "Inventar: <br>";
+        for (Item item : player.getInventar()) {
+            inventory += "->" + item.name + "<br>";
+        }
 
-        JLabel statsLabel = new JLabel("<html><font size=8>"
+
+        JLabel statsLabel = new JLabel("<html><font size=5>"
                 + "Viata: " + player.health + "<br>"
                 + "Atac: " + player.attack + "<br>"
                 + "Aparare: " + player.defense + "<br>"
                 + "Lemn: " + player.getWood() + "<br>"
                 + "Piatra: " + player.getStone() + "<br>"
-                + "Mancare: " + player.getFood() + "<br></font>"
-                + "Pentru constructii apasa tasta:" + "<br>"
-                + "1. Fountain Of Life" + "<br>"
-                + "2. Sword Monument" + "</html>");
-
+                + "Mancare: " + player.getFood() + "<br><br>"
+                + inventory.toString()
+                + "Pentru constructii apasa tasta:<br>"
+                + "1. Fountain Of Life<br>"
+                + "2. Sword Monument"
+                + "</font></html>");
 
         statsPanel.add(statsLabel);
         statsPanel.revalidate();
         statsPanel.repaint();
     }
 
+
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            GamePanel game = new GamePanel();
-            game.setVisible(true);
+                GamePanel game = new GamePanel();
+                game.setVisible(true);
         });
     }
 }
