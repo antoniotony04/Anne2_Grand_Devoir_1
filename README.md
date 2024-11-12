@@ -4,7 +4,7 @@
 - **Équipe :** Travaillez en équipes de 2-3 personnes.
 - **Soumission :** Uploadez le projet sur Moodle (un seul upload par équipe suffit).
   - En cas de problème, contactez votre assistant sur Teams : _Iulia Stanica_ ou _Alexandru Bratosin_.
-- **Deadline :** 8ème semaine (**Lundi, 25 novembre 8:00**) et présentation pendant le TP de cette semaine.
+- **Deadline :** 9ème semaine (**Lundi, 25 novembre 8:00**) et présentation pendant le TP de cette semaine.
 - **Présence :** Vous devez être présent à la séance de TP respective pour recevoir les points. Si le projet est soumis sur Moodle mais non présenté, **la note sera 0**.
 - **Questions :** Utilisez le groupe Teams de POO ou envoyez un message sur le chat.
 
