@@ -2,12 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 
 public class GamePanel extends JFrame {
     public JPanel gamePanel;
@@ -18,7 +17,7 @@ public class GamePanel extends JFrame {
     public int kc = 0;
     public int enemyType = 0;
 
-    public GamePanel() {
+    public GamePanel() throws IOException {
         setTitle("Jocul lui Tony si Daria");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -29,7 +28,17 @@ public class GamePanel extends JFrame {
         playerX = size / 2;
         playerY = size / 2;
 
-        player = new Player("Jucator", 10, 5, 100);
+        FileReader fr = new FileReader("src/datePlayer.txt");
+        BufferedReader br = new BufferedReader(fr);
+        String line;
+        while((line = br.readLine())!=null){
+            String[] datePlayer = line.split("/");
+            String nume = datePlayer[0];
+            int attack = Integer.parseInt(datePlayer[1]);
+            int defense = Integer.parseInt(datePlayer[2]);
+            int health = Integer.parseInt(datePlayer[3]);
+            player = new Player(nume, attack, defense, health);
+        }
         map[playerY][playerX] = player;
 
         spawnRandomObjects(size);
@@ -261,7 +270,7 @@ public class GamePanel extends JFrame {
         System.out.println("Batalia a inceput cu " + enemy.name);
 
         while (player.isAlive && enemy.isAlive) {
-            int playerDamage = Math.max(0, player.attack - enemy.defense);
+            int playerDamage = player.attack - enemy.defense;
             enemy.takeDamage(playerDamage);
             System.out.println("Jucatorul da " + playerDamage + " daune inamicului.");
 
@@ -276,7 +285,7 @@ public class GamePanel extends JFrame {
 
                     if (dropat.type == 1) {
                         if (player.getArma() != dropat) {
-                            if (a.compare(player.getArma(), dropat) > 0) {
+                            if (a.compare(player.getArma(), dropat) < 0) {
 //                                player.addItemToInventory(player.getArma());
                                 player.setArma(dropat);
                                 System.out.println("Arma echipata: " + dropat.name);
@@ -291,7 +300,7 @@ public class GamePanel extends JFrame {
                         }
                     } else if (dropat.type == 2) {
                         if (player.getCasca() != dropat) {
-                            if (b.compare(player.getCasca(), dropat) > 0) {
+                            if (b.compare(player.getCasca(), dropat) < 0) {
 //                                player.addItemToInventory(player.getCasca());
                                 player.setCasca(dropat);
                                 System.out.println("Casca echipata: " + dropat.name);
@@ -305,7 +314,7 @@ public class GamePanel extends JFrame {
                         }
                     } else if (dropat.type == 3) {
                         if (player.getArmura() != dropat) {
-                            if (b.compare(player.getArmura(), dropat) > 0) {
+                            if (b.compare(player.getArmura(), dropat) < 0) {
 //                                player.addItemToInventory(player.getArmura());
                                 player.setArmura(dropat);
                                 System.out.println("Armura echipata: " + dropat.name);
@@ -321,6 +330,7 @@ public class GamePanel extends JFrame {
                     updateStatsPanel();
                 } else {
                     System.out.println("Inamicul nu a dropat nimic.");
+                    updateStatsPanel();
                 }
             }
 
@@ -366,7 +376,7 @@ public class GamePanel extends JFrame {
 
     public void updateStatsPanel() {
         statsPanel.removeAll();
-        //HTML in JLabel https://stackoverflow.com/questions/6635730/how-do-i-put-html-in-a-jlabel-in-java
+        //HTML folosit cu JLabel https://stackoverflow.com/questions/6635730/how-do-i-put-html-in-a-jlabel-in-java
         String inventory = "Inventar: <br>";
         for (Item item : player.getInventar()) {
             inventory += "->" + item.name + "<br>";
@@ -395,8 +405,13 @@ public class GamePanel extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-                GamePanel game = new GamePanel();
-                game.setVisible(true);
+            GamePanel game = null;
+            try {
+                game = new GamePanel();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            game.setVisible(true);
         });
     }
 }
